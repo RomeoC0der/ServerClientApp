@@ -11,7 +11,6 @@
 #include "div.h"
 /*<----------------DEFINES------------------->*/
 #define CREATE_USER "CREATENEWUSER"
-#define UNIQUE_ID "_unique_id_"
 #define MESSAGE "DEFAULT_MESSAGE"
 #define TEMPLATE_SERVER_IP "127.0.0.1"
 #define TEMPLATE_SERVER_PORT "8014"
@@ -23,7 +22,7 @@
 /*<----------------DECLARATION------------------->*/
 inline SOCKET sock = 0;
 inline int unique_id = GetTickCount64();
-constexpr int frame_rate = 1000 / 120;
+constexpr int frame_rate = 1000 / 480;
 inline std::string ip;
 inline std::string port_s;
 char msg[5096]{ '\0' };
@@ -64,15 +63,17 @@ int main(int argc, char** argv)
 		return 0;
 	}
 	/*end of connecting part*/
+	
 	reg_acc();
 	system("cls");
 	char buff[512]{ '\0' };
 	std::thread t(write_line);
 	t.detach();
 	int sz = 1;
+	
 	while (!strstr(msg, STOP_CLIENT_WORK) && sz >= 0)
 	{
-		send(sock, "\0", 1, 0);
+		send(sock, "", 1, 0);
 		sz = recv(sock, buff, sizeof buff, 0);
 		if (sz > 0)
 		{
@@ -91,8 +92,10 @@ int main(int argc, char** argv)
 		if (strstr(msg, CLEAR_CONSOLE))
 		{
 			system("cls");
+		}		
+		if (GetAsyncKeyState(VK_RETURN)) {
+			send_message(MESSAGE);
 		}
-		if (GetAsyncKeyState(VK_RETURN))send_message(MESSAGE);
 		std::this_thread::sleep_for(std::chrono::microseconds(500));
 	}
 	shutdown(sock, SD_SEND);
@@ -100,9 +103,9 @@ int main(int argc, char** argv)
 	WSACleanup();
 }
 void write_line() {
-	while (true) {
+	while (true) {		
 		std::cin.getline(msg, 5096);
-		std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+		std::this_thread::sleep_for(std::chrono::milliseconds(500));
 	}
 }
 bool send_message(const std::string command)
@@ -114,8 +117,6 @@ bool send_message(const std::string command)
 		cd = GetTickCount();
 		std::string s = std::string(msg);
 		s += command;
-		s += UNIQUE_ID;
-		s += std::to_string(unique_id);
 		send(sock, s.c_str(), s.size(), 0);		
 		ZeroMemory(msg, 5096);
 	}
@@ -149,11 +150,11 @@ bool create_socket(SOCKET* s, bool tcp)
 void reg_acc()
 {
 	std::string account_info_msg = "";
-	std::string str_salt;
-	int salt = 0;
+	//std::string str_salt;
+	//int salt = 0;
 	std::cout << "enter your name >> \n";
 	std::cin >> account_info_msg;	
-	bool right_salt = false;
+	/*bool right_salt = false;
 	while (!right_salt)
 	{
 		right_salt = true;
@@ -163,9 +164,7 @@ void reg_acc()
 		{
 			if (tmp < '0' || tmp > '9')right_salt = false;
 		}
-	}
-	salt = std::stoi(str_salt);
-	unique_id += salt;
-	account_info_msg += "_id_" + std::to_string(unique_id) + CREATE_USER;
+	}*/
+	account_info_msg +=  CREATE_USER;
 	send(sock, account_info_msg.c_str(), account_info_msg.size(), 0);
 }

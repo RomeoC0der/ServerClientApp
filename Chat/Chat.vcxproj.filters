@@ -18,12 +18,12 @@
     <ClCompile Include="Chat.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="div.cpp">
+    <ClCompile Include="..\ChatServer\div.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="div.h">
+    <ClInclude Include="..\ChatServer\div.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>

@@ -15,28 +15,23 @@
 #define SERVER_IP "192.168.0.105"
 #define SERVER_PORT "8014"
 #define CREATE_USER "CREATENEWUSER"
-#define UNIQUE_ID "_unique_id_"
 #define MESSAGE "DEFAULT_MESSAGE"
 #define SERVER_MSG "SERVER_MESSAGE"
 /*<----------------DECLARATION------------------->*/
 struct user {
 	std::string name;
-	int unique_id{ 0 };
 	SOCKET attached{ 0 };
 	user(std::string name)
 	{
 		this->name = name;
-		unique_id = 0;
 		attached = 0;
 	}
-	user(std::string name, int id)
+	user(std::string name, SOCKET id)
 	{
-		this->name = name;
-		unique_id = id;
-		attached = 0;
+		this->name = name;		
+		attached = id;
 	}
 	user() {
-		unique_id = 0;
 		this->name = "";
 		attached = 0;
 	};
@@ -45,10 +40,11 @@ inline SOCKET sock = INVALID_SOCKET;
 inline SOCKET client_sock = INVALID_SOCKET;
 inline KGB::div<SOCKET>all_clients_sockets;
 inline KGB::div<user>user_list;
-constexpr int frame_rate = 1000 / 120;
+constexpr int frame_rate = 1000 / 480;
 /*<----------------PROTOTYPES------------------->*/
 std::optional<int>get_pos_in_str(std::string str, std::string sub_str);
 std::optional<user> get_user_by_id(int id);
+std::optional<user> get_user_by_socket(SOCKET id);
 void send_message(user u_data, std::string msg, SOCKET s);
 void send_message_all(user u_data, std::string msg);
 void handler(const SOCKET s);
@@ -67,50 +63,29 @@ void handler(const SOCKET s) {
 		 {
 			 if (strstr(recvbuf, CREATE_USER))
 			 {
-				 std::optional<int>tmp = get_pos_in_str(recvbuf, "_id_");
-				 char* end_id = strstr(recvbuf, CREATE_USER);
+				 std::optional<int>tmp = get_pos_in_str(recvbuf, CREATE_USER);			
 				 if (tmp != std::nullopt)
-				 {
-					 std::string id_user = "";
-					 for (int i = tmp.value() + strlen("_id_"); i < recvbuflen; i++)
-					 {
-						 if (&recvbuf[i] == end_id)break;
-						 id_user += recvbuf[i];
-					 }
-					 int id_int = std::stoi(id_user);
+				 {					
 					 std::string name = "";
 					 for (int i = 0; i < tmp.value(); i++)
 					 {
 						 name += recvbuf[i];
-					 }
-					
-					 user_list.emplace_back(user( name, id_int ));
-					 user_list.at(user_list.length() - 1).attached = s;
+					 }					
+					 user_list.emplace_back(user( name, s ));					
 				 }
 				 std::cout << "NEW USER HAS BEEN REGISTRATED:\n";
-				// send(s, "created", 7, 0);
 			 }
 			 if (strstr(recvbuf, MESSAGE))
 			 {
 				 std::string message = "";
-				 std::string id = "";
 				 char* end_of_msg = strstr(recvbuf, MESSAGE);
 				 for (const char& tmp : recvbuf)
 				 {
 					 if (&tmp == end_of_msg)break;
 					 message += tmp;
 				 }
-				 if (message == "")continue;
-				 std::optional<int>pos = get_pos_in_str(recvbuf, UNIQUE_ID);
-				 if (pos != std::nullopt)
-				 {
-					 for (int i = pos.value() + strlen(UNIQUE_ID); i < recvbuflen; i++)
-					 {
-						 id += recvbuf[i];
-					 }
-				 }
-				 int id_int = std::stoi(id);
-				 std::optional<user> data = get_user_by_id(id_int);
+				 if (message == "")continue;				 
+				 std::optional<user> data = get_user_by_socket(s);
 				 if (data != std::nullopt)
 				 {
 					 send_message_all(data.value(), message);
@@ -153,17 +128,23 @@ int main(int argc, char** argv)
 }
 std::optional<user> get_user_by_id(const int id)
 {
-	for (const user& tmp : user_list)
+	/*for (const user& tmp : user_list)
 	{
 		if (tmp.unique_id == id)return tmp;
+	}*/
+	return std::nullopt;
+}
+std::optional<user> get_user_by_socket(SOCKET id)
+{
+	for (const user& tmp : user_list)
+	{
+		if (tmp.attached == id)return tmp;
 	}
 	return std::nullopt;
 }
 void send_message(const user u_data, const std::string msg, const SOCKET s)
 {
-	std::string tmp = "id : ";
-	tmp += std::to_string(u_data.unique_id);
-	tmp += " ";
+	std::string tmp = "";
 	tmp += u_data.name;
 	tmp += " >> ";
 	tmp += msg;
@@ -197,7 +178,7 @@ std::optional<int>get_pos_in_str(const std::string str, const std::string sub_st
 }
 void send_message_all(const user u_data, const std::string msg)
 {
-	std::string tmp = u_data.name + "("+ std::to_string(u_data.unique_id)+") :: " + msg;
+	std::string tmp = u_data.name +  ":: " + msg;
 	tmp += SERVER_MSG;
 	for (const SOCKET& a : all_clients_sockets)
 		send(a, tmp.c_str(), tmp.length(), 0);

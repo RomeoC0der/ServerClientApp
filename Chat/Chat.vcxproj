@@ -141,11 +141,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\ChatServer\div.cpp" />
     <ClCompile Include="Chat.cpp" />
-    <ClCompile Include="div.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="div.h" />
+    <ClInclude Include="..\ChatServer\div.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
